@@ -19,8 +19,9 @@ import { UsageMeter } from "@/components/usage-meter";
 import { instrumentSerif } from "@/lib/fonts";
 import { NAV_ITEMS, isActivePath } from "@/lib/nav-items";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children, simple = false }: { children: React.ReactNode; simple?: boolean }) {
   const pathname = usePathname();
+  if (simple && pathname === "/") return <><header className="op-simple-header"><Link href="/"><CoMark size={28} /><span>career-ops <b style={{fontSize:11,fontWeight:500,marginLeft:8}}>ÉNERGIE</b></span></Link><small>Paris & petite couronne</small></header><main>{children}</main></>;
   return (
     <JobsProvider>
       <PipelineProvider>

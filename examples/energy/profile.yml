@@ -1,0 +1,21 @@
+language:
+  output: fr
+  modes_dir: modes/fr
+spend_tier: economy
+target_roles:
+  primary: [Ingénieur énergie, Ingénieur efficacité énergétique, Ingénieur performance énergétique, Energy Manager, Ingénieur méthodes énergie, Ingénieur utilités]
+  archetypes:
+    - name: Énergie et efficacité énergétique
+      fit: primary
+    - name: Méthodes et amélioration continue avec composante énergétique
+      fit: secondary
+opportunities:
+  enabled: true
+  departments: ['75', '92', '93', '94']
+  weights: {domain: 30, missions: 25, employer: 20, location: 15, quality: 10}
+  maxAgeDays: 60
+  refreshHours: 12
+  aiEnabled: false
+  aiLimit: 15
+  directEmployers: [Veolia, Vattenfall, Accor, Tenergie]
+  excludedCompanies: []

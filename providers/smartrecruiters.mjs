@@ -97,8 +97,8 @@ function resolveSlug(entry) {
   return null;
 }
 
-function buildPostingsUrl(slug, offset = 0) {
-  return `https://api.smartrecruiters.com/v1/companies/${slug}/postings?limit=${SR_PAGE_SIZE}&offset=${offset}&status=PUBLIC`;
+function buildPostingsUrl(slug, offset = 0, country = null) {
+  return `https://api.smartrecruiters.com/v1/companies/${slug}/postings?limit=${SR_PAGE_SIZE}&offset=${offset}&status=PUBLIC${country ? `&country=${country}` : ''}`;
 }
 
 function buildPostingDetailUrl(slug, id) {
@@ -132,7 +132,7 @@ export default {
 
     const all = [];
     for (let page = 0; page < pageLimit; page++) {
-      const apiUrl = buildPostingsUrl(slug, page * SR_PAGE_SIZE);
+      const apiUrl = buildPostingsUrl(slug, page * SR_PAGE_SIZE, /^[a-z]{2}$/.test(entry.smartrecruiters?.country || '') ? entry.smartrecruiters.country : null);
       assertSmartRecruitersUrl(apiUrl);
       const json = await ctx.fetchJson(apiUrl, { redirect: 'error' });
       const parsed = parseSmartRecruitersResponse(json, entry.name);
@@ -147,7 +147,7 @@ export default {
     const { fetchDetails, detailLimit } = parseSmartRecruitersConfig(entry);
     const probing = Number.isInteger(ctx?.maxPages) && ctx.maxPages > 0;
     if (fetchDetails && !probing) {
-      const jobs = all.filter((job) => job.id).slice(0, detailLimit);
+      const jobs = all.filter((job) => job.id && (!ctx.shouldEnrich || ctx.shouldEnrich(job))).slice(0, detailLimit);
       for (let i = 0; i < jobs.length; i += SR_DETAIL_BATCH) {
         const batch = jobs.slice(i, i + SR_DETAIL_BATCH);
         await Promise.all(batch.map(async (job) => {
@@ -157,6 +157,10 @@ export default {
             const detail = await ctx.fetchJson(detailUrl, { redirect: 'error' });
             const description = extractDescription(detail);
             if (description) job.description = description;
+            const sections = detail?.jobAd?.sections;
+            job.missionsDescription = htmlToText(sections?.jobDescription?.text || '');
+            job.employerDescription = htmlToText(sections?.companyDescription?.text || '');
+            job.detailCheckedAt = new Date().toISOString();
           } catch {
             // Detail fetch is an enrichment only. Keep the listing result.
           }
@@ -224,6 +228,16 @@ export function parseSmartRecruitersResponse(json, companyName) {
         url = `https://jobs.smartrecruiters.com/${companySlug}/${j.id}${slugified ? `-${slugified}` : ''}`;
       }
     }
-    return { title: j.name || '', url, location, company: companyName, id: typeof j.id === 'string' || typeof j.id === 'number' ? String(j.id) : undefined };
+    const postedAt = Date.parse(j.releasedDate || '');
+    return { title: j.name || '', url, location, company: companyName,
+      ...(Number.isFinite(postedAt) ? { postedAt } : {}),
+      ...(j.id ? { externalId: String(j.id) } : {}),
+      ...(j.refNumber ? { requisitionId: String(j.refNumber) } : {}),
+      ...(loc.city ? { city: loc.city } : {}),
+      ...(loc.country ? { country: loc.country } : {}),
+      ...(loc.postalCode ? { postalCode: loc.postalCode } : {}),
+      ...(loc.hybrid ? { workMode: 'Hybride' } : loc.remote ? { workMode: 'Télétravail' } : {}),
+      ...(j.typeOfEmployment?.label ? { contract: j.typeOfEmployment.label } : {}),
+      id: typeof j.id === 'string' || typeof j.id === 'number' ? String(j.id) : undefined };
   });
 }

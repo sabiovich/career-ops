@@ -1,0 +1,14 @@
+services:
+  career-ops:
+    build:
+      context: ..
+      dockerfile: Dockerfile.energy
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      CAREER_OPS_WEB_PASSWORD: ${CAREER_OPS_WEB_PASSWORD:?Mot de passe requis}
+    volumes:
+      - career-data:/app/user
+    restart: unless-stopped
+volumes:
+  career-data:

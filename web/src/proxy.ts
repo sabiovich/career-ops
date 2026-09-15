@@ -1,3 +1,4 @@
+import { checkPersonalAccess } from "@/lib/access-guard.mjs";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import {
@@ -20,6 +21,9 @@ import {
 // from a chrome-extension:// origin, which Fetch Metadata always reports as
 // "cross-site", so every one of its requests is refused otherwise.
 export function proxy(req: NextRequest) {
+  const access = checkPersonalAccess({authorization:req.headers.get("authorization"),host:req.headers.get("host"),password:process.env.CAREER_OPS_WEB_PASSWORD,enabled:process.env.CAREER_OPS_PERSONAL_WEB === "true"});
+  if (!access.ok) return new NextResponse(access.reason, {status:access.status,headers:access.status===401?{"WWW-Authenticate":'Basic realm="Career-Ops personnel", charset="UTF-8"',"Cache-Control":"no-store"}:{"Cache-Control":"no-store"}});
+  if (!req.nextUrl.pathname.startsWith("/api/")) return NextResponse.next();
   const decision = checkRequest({
     secFetchSite: req.headers.get("sec-fetch-site"),
     origin: req.headers.get("origin"),
@@ -33,4 +37,4 @@ export function proxy(req: NextRequest) {
   return NextResponse.next();
 }
 
-export const config = { matcher: "/api/:path*" };
+export const config = { matcher: "/((?!_next/static|_next/image|favicon.ico).*)" };

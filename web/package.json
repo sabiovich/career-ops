@@ -33,6 +33,8 @@
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "esbuild": "^0.28.2",
+    "jsdom": "^30.0.1",
     "postcss": "^8.5.18",
     "tailwindcss": "^4.2.2",
     "typescript": "^7.0.0"

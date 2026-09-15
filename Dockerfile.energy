@@ -1,0 +1,20 @@
+# Dedicated production image for the existing Next.js app and Career-Ops core.
+FROM node:24-bookworm-slim AS build
+WORKDIR /app
+COPY package.json ./
+RUN npm install --ignore-scripts --no-audit --no-fund
+COPY web/package.json web/package-lock.json ./web/
+RUN cd web && npm ci --ignore-scripts --no-audit --no-fund
+COPY . .
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN cd web && npm run build
+
+FROM node:24-bookworm-slim
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 CAREER_OPS_ROOT=/app/user CAREER_OPS_CODE_ROOT=/app CAREER_OPS_PERSONAL_WEB=true PORT=3000
+WORKDIR /app
+COPY --from=build --chown=node:node /app /app
+RUN mkdir -p /app/user && chown node:node /app/user
+USER node
+EXPOSE 3000
+VOLUME ["/app/user"]
+CMD ["node", "deploy/start-energy.mjs"]

@@ -1,0 +1,26 @@
+# Portails publics employeurs. La sélection énergie complète s'effectue sur les descriptions.
+# Ces entrées réutilisent le provider Career-Ops SmartRecruiters.
+tracked_companies:
+  - name: Veolia
+    careers_url: https://careers.smartrecruiters.com/VeoliaEnvironnementSA
+    provider: smartrecruiters
+    smartrecruiters: {fetchDetails: true, detailLimit: 100, country: fr}
+  - name: Vattenfall
+    careers_url: https://careers.smartrecruiters.com/Vattenfall
+    provider: smartrecruiters
+    smartrecruiters: {fetchDetails: true, detailLimit: 100, country: fr}
+  - name: Accor
+    careers_url: https://careers.smartrecruiters.com/AccorCorpo
+    provider: smartrecruiters
+    smartrecruiters: {fetchDetails: true, detailLimit: 100, country: fr}
+  - name: Tenergie
+    careers_url: https://careers.smartrecruiters.com/Tenergie
+    provider: smartrecruiters
+    smartrecruiters: {fetchDetails: true, detailLimit: 100, country: fr}
+job_boards: []
+title_filter:
+  positive: []
+  negative: []
+location_filter:
+  allow: []
+  block: []

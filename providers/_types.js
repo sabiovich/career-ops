@@ -120,6 +120,7 @@
  * @property {(url: string, opts?: FetchOptions) => Promise<string>}  fetchText
  * @property {(url: string, opts?: FetchOptions) => Promise<unknown>} fetchJson
  * @property {(url: string, opts?: FetchOptions) => Promise<Response>} fetchResponse  Raw Response (timeout + non-2xx guard applied); for providers needing response headers.
+ * @property {(job: Job) => boolean} [shouldEnrich] Optional detail enrichment predicate, applied before the detail budget (SmartRecruiters).
  * @property {number} [maxPages] Optional pagination hint. When set (verify-portals.mjs's
  *                              health probe passes 1), a paginating provider SHOULD stop
  *                              after this many pages — the probe only needs the first page

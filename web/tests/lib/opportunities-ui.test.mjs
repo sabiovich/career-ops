@@ -1,0 +1,45 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {build} from 'esbuild';
+import {JSDOM} from 'jsdom';
+import {mkdtemp,rm} from 'node:fs/promises';
+import path from 'node:path';
+import {pathToFileURL} from 'node:url';
+import React,{act} from 'react';
+import {createRoot} from 'react-dom/client';
+test('interface : tri, filtre, détail, suivi et erreur de collecte',async()=>{
+ const dir=await mkdtemp(path.resolve('.ui-test-'));
+ const dom=new JSDOM('<div id="root"></div>',{url:'http://localhost'});
+ const old={window:globalThis.window,document:globalThis.document,fetch:globalThis.fetch};
+ globalThis.window=dom.window;globalThis.document=dom.window.document;globalThis.IS_REACT_ACT_ENVIRONMENT=true;
+ dom.window.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
+ dom.window.HTMLDialogElement.prototype.close=function(){this.open=false;};
+ const job=(id,title,department,score)=>({id,title,company:'Employeur final',location:'Paris',url:'https://example.org/jobs/'+id,status:'Nouveau',description:'Description détaillée du poste.',source:'Test',analysis:{score,rawScore:score,category:'EXCELLENTE CIBLE',verdict:'POSTULER',summary:'Optimisation énergétique interne.',positives:['Employeur final'],negatives:[],alerts:[],categories:['Énergie'],parts:{domain:30},weights:{domain:30},geo:{city:'Paris',department},evidence:{energy:[],missions:[]},recommended:true,needsReview:false,method:'Règles contextuelles'}});
+ const data={jobs:[job('a','Ingénieur énergie A','75',90),job('b','Ingénieur énergie B','92',95)],aiAvailable:false,lastRun:{finishedAt:new Date().toISOString(),status:'ok',sources:[]}};
+ const calls=[];
+ globalThis.fetch=async(url,opts={})=>{calls.push(opts);if(opts.method==='POST')return {ok:false,json:async()=>({error:'Source temporairement indisponible'})};return {ok:true,json:async()=>data};};
+ let root;
+ try{
+  await build({entryPoints:['src/components/opportunities/opportunities-view.tsx'],outfile:path.join(dir,'view.mjs'),bundle:true,platform:'node',format:'esm',jsx:'automatic',packages:'external',alias:{'@':path.resolve('src')},loader:{'.css':'empty'},logLevel:'silent'});
+  const {OpportunitiesView}=await import(pathToFileURL(path.join(dir,'view.mjs')));
+  root=createRoot(document.getElementById('root'));
+  await act(async()=>{root.render(React.createElement(OpportunitiesView));});
+  assert.equal(document.querySelectorAll('.op-card').length,2);
+  assert.match(document.querySelector('.op-title').textContent,/énergie B/);
+  const select=document.querySelector('[aria-label="Département"]');
+  await act(async()=>{select.value='75';select.dispatchEvent(new dom.window.Event('change',{bubbles:true}));});
+  assert.equal(document.querySelectorAll('.op-card').length,1);
+  await act(async()=>document.querySelector('.op-title').click());
+  assert.equal(document.querySelector('dialog').open,true);
+  assert.equal(document.querySelector('.op-detail-actions a').href,'https://example.org/jobs/a');
+  const status=document.querySelector('[aria-label="Statut de l’offre"]');
+  await act(async()=>{status.value='À postuler';status.dispatchEvent(new dom.window.Event('change',{bubbles:true}));});
+  assert.deepEqual(JSON.parse(calls.find(c=>c.method==='PATCH').body),{id:'a',status:'À postuler'});
+  assert.equal(status.value,'À postuler');
+  await act(async()=>document.querySelector('[aria-label="Fermer l’analyse"]').click());
+  assert.equal(document.querySelector('dialog').open,false);
+  await act(async()=>document.querySelector('.op-summary button').click());
+  assert.match(document.querySelector('[role="alert"]').textContent,/Source temporairement/);
+  assert.equal(document.querySelectorAll('.op-card').length,1);
+ }finally{if(root)await act(async()=>root.unmount());Object.assign(globalThis,old);delete globalThis.IS_REACT_ACT_ENVIRONMENT;dom.window.close();await rm(dir,{recursive:true,force:true});}
+});

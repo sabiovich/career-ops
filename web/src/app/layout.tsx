@@ -1,3 +1,4 @@
+import { opportunitiesEnabled } from "@/lib/core/opportunities";
 import type { Metadata, Viewport } from "next";
 import { inter, instrumentSerif, instrumentSerifItalic } from "@/lib/fonts";
 import { AppShell } from "@/components/app-shell";
@@ -28,13 +29,13 @@ const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem('career-ops:the
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
-      lang="en"
+      lang={opportunitiesEnabled() ? 'fr' : 'en'}
       suppressHydrationWarning
       className={`${inter.variable} ${instrumentSerif.variable} ${instrumentSerifItalic.variable}`}
     >
       <body className="font-sans antialiased">
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
-        <AppShell>{children}</AppShell>
+        <AppShell simple={opportunitiesEnabled()}>{children}</AppShell>
       </body>
     </html>
   );
