@@ -4,6 +4,12 @@ import {spawn} from 'node:child_process';
 import {scanOpportunities} from '../lib/opportunities/service.mjs';
 const code=path.resolve(import.meta.dirname,'..');
 const root=process.env.CAREER_OPS_ROOT||path.join(code,'user');
+// Railway mounts new volumes as root. Prepare the mount, then drop privileges.
+if (process.getuid?.() === 0) {
+ fs.mkdirSync(root,{recursive:true});
+ fs.chownSync(root,1000,1000);
+ process.setgroups([]); process.setgid(1000); process.setuid(1000);
+}
 fs.mkdirSync(path.join(root,'config'),{recursive:true});fs.mkdirSync(path.join(root,'modes'),{recursive:true});
 for(const [src,dest] of [['profile.yml','config/profile.yml'],['portals.yml','portals.yml'],['profile.md','modes/_profile.md']]){
  const target=path.join(root,dest);
